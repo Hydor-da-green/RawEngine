@@ -194,6 +194,8 @@ int main() {
     GLint adsLightDirectionUniform = glGetUniformLocation(adsShaderProgram, "lightDirection");
     GLint adsLightColorUniform = glGetUniformLocation(adsShaderProgram, "lightColor");
 
+    GLint lightPositionUniform = glGetUniformLocation(adsShaderProgram, "lightPosition");
+
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
     float deltaTime = 0.0f;
@@ -226,6 +228,7 @@ int main() {
 
         glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
         glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec3 lightPosition = glm::vec3(3.0f, 3.0f, 1.0f);
 
         glUseProgram(adsShaderProgram);
         glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
@@ -236,6 +239,7 @@ int main() {
         glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
         glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
         glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
+        glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
         suzanne.render();
 
 

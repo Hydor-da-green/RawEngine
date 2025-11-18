@@ -10,9 +10,14 @@ uniform vec3 ambientLightColor;
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
+uniform vec3 lightPosition;
+
 void main()
 {
     vec3 objectColor = vec3(1.0, 0.0, 0.0);
+
+    vec3 worldLightDirection = normalize(lightPosition - fPos);
+
     vec3 ambient = ambientLightIntensity * ambientLightColor;
     vec3 diffuse = max(dot(-lightDirection,fNor), 0.0) * lightColor;
 

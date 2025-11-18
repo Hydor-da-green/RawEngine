@@ -9,7 +9,7 @@ out vec3 fNor;
 out vec2 uv;
 
 void main() {
-  fPos = aPos;
+  fPos = vec3(mMatrix * vec4(aPos,0.0));
   fNor = vec3(mMatrix * vec4(aNor,0.0));
   uv = aUv;
   gl_Position = mvpMatrix * vec4(aPos, 1.0);
