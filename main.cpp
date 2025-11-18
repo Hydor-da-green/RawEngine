@@ -113,6 +113,9 @@ int main() {
     const GLuint modelVertexShader = generateShader("shaders/modelVertex.vs", GL_VERTEX_SHADER);
     const GLuint fragmentShader = generateShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
+///ADS model shaders generatiion
+    const GLuint adsVertexShader = generateShader("shaders/adsVertex.vs", GL_VERTEX_SHADER);
+    const GLuint adsFragmentShader = generateShader("shaders/adsFragment.fs", GL_FRAGMENT_SHADER);
 
     int success;
     char infoLog[512];
@@ -125,6 +128,18 @@ int main() {
         glGetProgramInfoLog(modelShaderProgram, 512, NULL, infoLog);
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
+
+    /// Ads model program creation
+    const unsigned int adsShaderProgram = glCreateProgram();
+    glAttachShader(adsShaderProgram, adsVertexShader);
+    glAttachShader(adsShaderProgram, adsFragmentShader);
+    glLinkProgram(adsShaderProgram);
+    glGetProgramiv(adsShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(adsShaderProgram, 512, NULL, infoLog);
+        printf("Error! Making Shader Program: %s\n", infoLog);
+    }
+
     const unsigned int textureShaderProgram = glCreateProgram();
     glAttachShader(textureShaderProgram, modelVertexShader);
     glAttachShader(textureShaderProgram, textureShader);
@@ -138,6 +153,10 @@ int main() {
     glDeleteShader(modelVertexShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
+    ///ads shader deletition
+    glDeleteShader(adsVertexShader);
+    glDeleteShader(adsFragmentShader);
+
 
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({quad});
@@ -165,6 +184,8 @@ int main() {
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
+    ///ads model uniforms
+    GLint adsmvpMatrixUniform = glGetUniformLocation(adsShaderProgram, "mvpMatrix");
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -192,8 +213,8 @@ int main() {
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
-        glUseProgram(modelShaderProgram);
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
+        glUseProgram(adsShaderProgram);
+        glUniformMatrix4fv(adsmvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
         suzanne.render();
         glBindVertexArray(0);
 
