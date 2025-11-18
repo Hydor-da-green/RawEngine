@@ -185,7 +185,14 @@ int main() {
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
     ///ads model uniforms
-    GLint adsmvpMatrixUniform = glGetUniformLocation(adsShaderProgram, "mvpMatrix");
+    GLint adsMvpMatrixUniform = glGetUniformLocation(adsShaderProgram, "mvpMatrix");
+    GLint adsMMatrixUniform = glGetUniformLocation(adsShaderProgram, "mMatrix");
+
+    GLint adsAmbientLightIntensityUniform = glGetUniformLocation(textureShaderProgram, "ambientLightIntensity");
+    GLint adsAmbientLightColorUniform = glGetUniformLocation(adsShaderProgram, "ambientLightColor");
+
+    GLint adsLightDirectionUniform = glGetUniformLocation(adsShaderProgram, "lightDirection");
+    GLint adsLightColorUniform = glGetUniformLocation(adsShaderProgram, "lightColor");
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -213,10 +220,31 @@ int main() {
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
+        ///ADS model light parameters
+        float ambientLightIntensity = 1.0f;
+        glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+        glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+        glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
         glUseProgram(adsShaderProgram);
-        glUniformMatrix4fv(adsmvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
+        glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
+        glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+
+
+        glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);
+        glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
+        glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
+        glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
         suzanne.render();
+
+
         glBindVertexArray(0);
+
+        //Teapot rendering
+
+        //ADS model light
+
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
