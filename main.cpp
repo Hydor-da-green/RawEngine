@@ -241,7 +241,7 @@ int main() {
 
         glBindVertexArray(0);
 
-        //Teapot rendering
+        //Sussane rendering
 
         //ADS model light
 
