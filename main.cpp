@@ -183,7 +183,7 @@ int main() {
     quadModel.translate(glm::vec3(0,0,-2.5));
     quadModel.scale(glm::vec3(5, 5, 1));
 
-    core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+    core::Model suzanne = core::AssimpLoader::loadModel("models/new_sphere.fbx");
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -208,6 +208,8 @@ int main() {
     GLint adsLightColorUniform = glGetUniformLocation(adsShaderProgram, "lightColor");
 
     GLint lightPositionUniform = glGetUniformLocation(adsShaderProgram, "lightPosition");
+    GLint cameraPositionUniform = glGetUniformLocation(adsShaderProgram, "cameraPosition");
+
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -253,7 +255,8 @@ int main() {
 
         glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
         glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 lightPosition = glm::vec3(3.0f, 3.0f, 1.0f);
+        glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
+        // x.distance = 50.0f;
 
         glUseProgram(adsShaderProgram);
         glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
@@ -265,6 +268,7 @@ int main() {
         glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
         glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
         glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
+        glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
         suzanne.render();
 
 
