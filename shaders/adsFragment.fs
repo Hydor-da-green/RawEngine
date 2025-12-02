@@ -13,8 +13,12 @@ uniform vec3 lightColor;
 uniform vec3 lightPosition;
 uniform vec3 cameraPosition;
 
+uniform sampler2D uvGridText;
+
 void main()
 {
+
+    vec4 textColor = texture (uvGridText, uv);
     vec3 objectColor = vec3(1.0, 0.0, 0.0);
 
     vec3 worldLightDirection = normalize(lightPosition - fPos);
@@ -36,13 +40,16 @@ void main()
     vec3 r = reflect(i, n);
     vec3 v = normalize( cameraPosition - fPos);
     vec3 specular = pow(max(dot(r, v), 0.0),s) *specularColor;
+    vec3 color = (ambient + diffuse + specular) * textColor.rgb; //diffuse color
 
 
 //     float distance = distance (lightPosition - fPos);
 //     float c2 = 0.3f;
 //     float attenuation = 1.0/c2* distance;
 
-    vec3 result = (ambient + diffuse + specular) * objectColor * attenuation;
+    vec3 result = (ambient + diffuse + specular) * textColor.rgb * attenuation;
 
    FragColor = vec4(result.x, result.y, result.z, 1);
+   //vec4 textColor = texture (uvGridText, uv);
+//    FragColor = vec4(textColor.x, textColor.y, textColor.z, 1);
 }

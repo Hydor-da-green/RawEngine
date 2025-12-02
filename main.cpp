@@ -183,8 +183,17 @@ int main() {
     quadModel.translate(glm::vec3(0,0,-2.5));
     quadModel.scale(glm::vec3(5, 5, 1));
 
-    core::Model suzanne = core::AssimpLoader::loadModel("models/new_sphere.fbx");
-    core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
+    core::Model suzanne = core::AssimpLoader::loadModel("models/BdayKitty.fbx");
+    core::Model sphere = core::AssimpLoader::loadModel("models/new_sphere.fbx");
+    core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png"); //adding a texture like writing a variable
+    core::Texture cmgtGingerTexture("textures/GingerTexture.png");
+
+    //scene switching
+    std::vector<core::Model*> models; //made pointer
+    models.push_back(&suzanne);   //&adress
+    models.push_back(&sphere);
+
+
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
     glClearColor(clearColor.r,
@@ -209,6 +218,8 @@ int main() {
 
     GLint lightPositionUniform = glGetUniformLocation(adsShaderProgram, "lightPosition");
     GLint cameraPositionUniform = glGetUniformLocation(adsShaderProgram, "cameraPosition");
+
+    GLint adsUvGridTexUniform = glGetUniformLocation(adsShaderProgram, "uvGridTexture");
 
 
     double currentTime = glfwGetTime();
@@ -249,27 +260,61 @@ int main() {
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
-        ///ADS model light parameters
-        float ambientLightIntensity = 1.0f;
-        glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        for (int i = 0; i < models.size(); i++) {
 
-        glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
-        glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
-        // x.distance = 50.0f;
+            core::Model *model = models[i];
+            // ///ADS model light parameters
+            float ambientLightIntensity = 1.0f;
+            glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
-        glUseProgram(adsShaderProgram);
-        glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
-        glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+            glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+            glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+            glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
+            // x.distance = 50.0f;
+
+            glUseProgram(adsShaderProgram);
+            glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
+            glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());
+            glUniform1i(adsUvGridTexUniform,0);
 
 
-        glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);
-        glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
-        glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
-        glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
-        glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
-        glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
-        suzanne.render();
+            glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);
+            glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
+            glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
+            glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
+            glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
+            glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
+            //suzanne.render();
+            model->render();
+
+        }
+
+        // ///ADS model light parameters
+        // float ambientLightIntensity = 1.0f;
+        // glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        //
+        // glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+        // glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        // glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
+        // // x.distance = 50.0f;
+        //
+        // glUseProgram(adsShaderProgram);
+        // glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
+        // glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());
+        // glUniform1i(adsUvGridTexUniform,0);
+        //
+        //
+        // glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);
+        // glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
+        // glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
+        // glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
+        // glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
+        // glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
+        // suzanne.render();
 
 
         glBindVertexArray(0);
