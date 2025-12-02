@@ -3,6 +3,7 @@ out vec4 FragColor;
 in vec3 fPos;
 in vec3 fNor;
 in vec2 uv;
+in mat3 TBN;
 
 uniform float ambientLightIntensity;
 uniform vec3 ambientLightColor;
@@ -19,9 +20,12 @@ void main()
 {
 
     vec4 textColor = texture (uvGridText, uv);
+//     vec3 T_normal = ()normalMapColor
     vec3 objectColor = vec3(1.0, 0.0, 0.0);
 
     vec3 worldLightDirection = normalize(lightPosition - fPos);
+
+//     vec3 T_lightDirection = TBN * pointLightDirection;
 
     vec3 ambient = ambientLightIntensity * ambientLightColor;
     vec3 diffuse = max(dot(worldLightDirection,fNor), 0.0) * lightColor;

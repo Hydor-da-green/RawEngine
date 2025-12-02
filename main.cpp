@@ -191,7 +191,7 @@ int main() {
     //scene switching
     std::vector<core::Model*> models; //made pointer
     models.push_back(&suzanne);   //&adress
-    models.push_back(&sphere);
+    //models.push_back(&sphere);
 
 
 
