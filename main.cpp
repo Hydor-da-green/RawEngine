@@ -130,12 +130,70 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // set up frame buffer
+
+    unsigned int framebuffer;    // create buffer
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    unsigned int textureColorbuffer;    //create texture
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width,g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER, GL_LINEAR);  //texture details
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,textureColorbuffer, 0);
+
+    GLuint RBO;
+    glGenRenderbuffers(1, &RBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_width, g_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    //end frame buffer
+
+    //SET UP PLANE FOR THE FINAL RENDER
+
+    float screenQuadVertices[] = {
+        //positions     //uv
+        -1.0f,  1.0f, 0.0f,  0.0f,1.0f, //tl
+        -1.0f, -1.0f, 0.0f,  0.0f,0.0f, //bl
+        1.0f, -1.0f, 0.0f,  1.0f,0.0f,   //br
+
+        -1.0f,  1.0f, 0.0f,  0.0f,1.0f,  //tl
+        1.0f,  -1.0f, 0.0f,  1.0f,0.0f,   //br
+        1.0f,  1.0f, 0.0f,  1.0f,1.0f,   //tr
+    };
+    GLuint screenVAO = 0;
+    GLuint screenVBO;
+    glGenVertexArrays(1, &screenVAO);
+    glGenBuffers(1, &screenVBO);
+    glBindVertexArray(screenVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuadVertices), screenQuadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1,2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+
+
     const GLuint modelVertexShader = generateShader("shaders/modelVertex.vs", GL_VERTEX_SHADER);
     const GLuint fragmentShader = generateShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
 ///ADS model shaders generatiion
     const GLuint adsVertexShader = generateShader("shaders/adsVertex.vs", GL_VERTEX_SHADER);
     const GLuint adsFragmentShader = generateShader("shaders/adsFragment.fs", GL_FRAGMENT_SHADER);
+
+    const GLuint planeVertexShader = generateShader("shaders/screen.vs", GL_VERTEX_SHADER);
+    const GLuint planeFragmentShader = generateShader("shaders/screen.fs", GL_FRAGMENT_SHADER);
 
     int success;
     char infoLog[512];
@@ -148,6 +206,7 @@ int main() {
         glGetProgramInfoLog(modelShaderProgram, 512, NULL, infoLog);
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
+
 
     /// Ads model program creation
     const unsigned int adsShaderProgram = glCreateProgram();
@@ -170,6 +229,17 @@ int main() {
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
 
+    const unsigned int planeShaderProgram = glCreateProgram();
+    glAttachShader(planeShaderProgram, planeVertexShader);
+    glAttachShader(planeShaderProgram, planeFragmentShader);
+    glLinkProgram(planeShaderProgram);
+    glGetProgramiv(planeShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(planeShaderProgram, 512, NULL, infoLog);
+        printf("Error! Making Shader Program: %s\n", infoLog);
+    }
+
+
     glDeleteShader(modelVertexShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
@@ -177,6 +247,8 @@ int main() {
     glDeleteShader(adsVertexShader);
     glDeleteShader(adsFragmentShader);
 
+    glDeleteShader(planeVertexShader);
+    glDeleteShader(planeFragmentShader);
 
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({quad});
@@ -221,14 +293,19 @@ int main() {
 
     GLint adsUvGridTexUniform = glGetUniformLocation(adsShaderProgram, "uvGridTexture");
 
+    GLint screenTextureUniform = glGetUniformLocation(planeShaderProgram, "textureUniform");
+
+
+
+
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
 
     float rotationStrength = 100.0f;
+    float x_distance = 100.0f;
 
     while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -236,6 +313,7 @@ int main() {
         ImGui::Begin("Raw Engine v2");
         ImGui::Text("Hello :)");
         ImGui::End();
+        ImGui::SliderFloat("X LightPosition", &x_distance, -5.0f, 5.0f);
 
         processInput(window);
         suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
@@ -249,6 +327,9 @@ int main() {
         glm::mat4 view = glm::lookAt(cameraPos,cameraTarget, cameraUp);
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(g_width) / static_cast<float>(g_height), 0.1f, 100.0f);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
         glUseProgram(textureShaderProgram);
@@ -289,7 +370,25 @@ int main() {
             //suzanne.render();
             model->render();
 
+
+            //render frame to show final image
+
+
         }
+        glBindVertexArray(0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(planeShaderProgram);
+        glBindVertexArray(screenVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glUniform1i(textureUniform, 0);
+        ///to load the gato
+        glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+        glDrawArrays(GL_TRIANGLES,0 ,6);
+        glBindVertexArray(0);
 
         // ///ADS model light parameters
         // float ambientLightIntensity = 1.0f;
@@ -317,7 +416,6 @@ int main() {
         // suzanne.render();
 
 
-        glBindVertexArray(0);
 
         //Sussane rendering
 
