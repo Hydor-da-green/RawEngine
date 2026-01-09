@@ -53,6 +53,7 @@ void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraDirection, cameraUp)) * cameraSpeed;
 }
+//the camera stuff is min
 
 void framebufferSizeCallback(GLFWwindow *window,
                              int width, int height) {
