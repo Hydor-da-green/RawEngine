@@ -270,6 +270,8 @@ int main() {
     std::vector<core::Model*> scene2;
     scene1.push_back(&sphere);
     scene2.push_back(&suzanne);
+    // scene1.push_back(&suzanne);
+
     //models.push_back(&sphere);
 
 
@@ -375,8 +377,8 @@ int main() {
                 glUseProgram(adsShaderProgram);
                 glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
                 glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, cmgtGatoTexture.getId());
                 glUniform1i(adsUvGridTexUniform,0);
 
 
