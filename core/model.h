@@ -9,8 +9,13 @@ namespace core {
     private:
         std::vector<core::Mesh> meshes;
         glm::mat4 modelMatrix;
+
+
+
     public:
         Model(std::vector<core::Mesh> meshes) : meshes(meshes), modelMatrix(1) {}
+    int id;
+
 
         void render();
 

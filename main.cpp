@@ -135,7 +135,7 @@ int main() {
 
     // set up frame buffer
 
-    unsigned int framebuffer;    // create buffer
+    unsigned int framebuffer;    // create buffer2
     glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
@@ -258,18 +258,24 @@ int main() {
     quadModel.translate(glm::vec3(0,0,-2.5));
     quadModel.scale(glm::vec3(5, 5, 1));
 
-    core::Model suzanne = core::AssimpLoader::loadModel("models/BdayKitty.fbx");
+    core::Model BdayKitty = core::AssimpLoader::loadModel("models/BdayKitty.fbx");
     core::Model sphere = core::AssimpLoader::loadModel("models/new_sphere.fbx");
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png"); //adding a texture like writing a variable
     core::Texture cmgtGingerTexture("textures/GingerTexture.png");
+    core::Texture CoubleFoundationTexture("textures/CoubleFoundation.png");
+    BdayKitty.id = cmgtGatoTexture.getId();
+    sphere.id = CoubleFoundationTexture.getId();
+
 
     //scene switching
     std::vector<core::Model*> models; //made pointer
-    models.push_back(&suzanne);   //&adress
+    models.push_back(&BdayKitty);   //&adress
     std::vector<core::Model*> scene1;
     std::vector<core::Model*> scene2;
     scene1.push_back(&sphere);
-    scene2.push_back(&suzanne);
+    scene1.push_back(&BdayKitty);
+    scene2.push_back(&sphere);
+    scene2.push_back(&BdayKitty);
     // scene1.push_back(&suzanne);
 
     //models.push_back(&sphere);
@@ -326,7 +332,7 @@ int main() {
         ImGui::SliderFloat("X LightPosition", &x_distance, -5.0f, 5.0f);
 
         processInput(window);
-        suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+        BdayKitty.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
 
         //VP
         const float radius = 10.0f;
@@ -375,8 +381,8 @@ int main() {
                 // x.distance = 50.0f;
 
                 glUseProgram(adsShaderProgram);
-                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
-                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * BdayKitty.getModelMatrix()));
+                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(BdayKitty.getModelMatrix()));
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, cmgtGatoTexture.getId());
                 glUniform1i(adsUvGridTexUniform,0);
@@ -412,8 +418,8 @@ int main() {
                 // x.distance = 50.0f;
 
                 glUseProgram(adsShaderProgram);
-                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
-                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * BdayKitty.getModelMatrix()));
+                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(BdayKitty.getModelMatrix()));
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());
                 glUniform1i(adsUvGridTexUniform,0);

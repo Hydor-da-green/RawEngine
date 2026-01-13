@@ -1,0 +1,530 @@
+<html>
+<head>
+<title>main.cpp</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #b3ae60;}
+.s1 { color: #bcbec4;}
+.s2 { color: #6aab73;}
+.s3 { color: #7a7e85;}
+.s4 { color: #cf8e6d;}
+.s5 { color: #bcbec4;}
+.s6 { color: #2aacb8;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.cpp</font>
+</center></td></tr></table>
+<pre><span class="s0">#include </span><span class="s2">&lt;glad/glad.h&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;GLFW/glfw3.h&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;glm/glm.hpp&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;glm/gtc/type_ptr.hpp&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;fstream&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;sstream&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;algorithm&gt;</span>
+<span class="s0">#include </span><span class="s2">&quot;core/mesh.h&quot;</span>
+<span class="s0">#include </span><span class="s2">&quot;core/assimpLoader.h&quot;</span>
+<span class="s0">#include </span><span class="s2">&quot;core/texture.h&quot;</span>
+
+<span class="s3">//#define MAC_CLION</span>
+<span class="s0">#define </span><span class="s1">VSTUDIO</span>
+
+<span class="s0">#ifdef </span><span class="s1">MAC_CLION</span>
+<span class="s0">#include </span><span class="s2">&quot;imgui.h&quot;</span>
+<span class="s0">#include </span><span class="s2">&quot;backends/imgui_impl_glfw.h&quot;</span>
+<span class="s0">#include </span><span class="s2">&quot;backends/imgui_impl_opengl3.h&quot;</span>
+<span class="s0">#endif</span>
+
+<span class="s0">#ifdef </span><span class="s1">VSTUDIO</span>
+<span class="s3">// Note: install imgui with:</span>
+<span class="s3">//     ./vcpkg.exe install imgui[glfw-binding,opengl3-binding]</span>
+<span class="s0">#include </span><span class="s2">&lt;imgui.h&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;imgui_impl_glfw.h&gt;</span>
+<span class="s0">#include </span><span class="s2">&lt;imgui_impl_opengl3.h&gt;</span>
+<span class="s0">#endif</span>
+
+<span class="s4">float </span><span class="s1">deltaTime </span><span class="s5">= </span><span class="s6">0.0f</span><span class="s5">;</span>
+
+
+<span class="s1">glm::vec3 cameraPos </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">0.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">, </span><span class="s6">10.0f</span><span class="s5">);</span>
+<span class="s1">glm::vec3 cameraTarget </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">0.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">);</span>
+<span class="s1">glm::vec3 cameraDirection </span><span class="s5">= </span><span class="s1">glm::normalize</span><span class="s5">(</span><span class="s1">cameraPos </span><span class="s5">- </span><span class="s1">cameraTarget</span><span class="s5">);</span>
+<span class="s1">glm::vec3 up </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">0.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">);</span>
+<span class="s1">glm::vec3 cameraRight </span><span class="s5">= </span><span class="s1">glm::normalize</span><span class="s5">(</span><span class="s1">glm::cross</span><span class="s5">(</span><span class="s1">up</span><span class="s5">, </span><span class="s1">cameraDirection</span><span class="s5">));</span>
+<span class="s1">glm::vec3 cameraUp </span><span class="s5">= </span><span class="s1">glm::cross</span><span class="s5">(</span><span class="s1">cameraDirection</span><span class="s5">, </span><span class="s1">cameraRight</span><span class="s5">);</span>
+
+<span class="s4">int </span><span class="s1">g_width </span><span class="s5">= </span><span class="s6">800</span><span class="s5">;</span>
+<span class="s4">int </span><span class="s1">g_height </span><span class="s5">= </span><span class="s6">600</span><span class="s5">;</span>
+
+<span class="s4">void </span><span class="s1">processInput</span><span class="s5">(</span><span class="s1">GLFWwindow </span><span class="s5">*</span><span class="s1">window</span><span class="s5">) {</span>
+    <span class="s4">if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_ESCAPE</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">)</span>
+        <span class="s1">glfwSetWindowShouldClose</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s4">true</span><span class="s5">);</span>
+
+    <span class="s4">float </span><span class="s1">cameraSpeed </span><span class="s5">= </span><span class="s6">5.0f </span><span class="s5">* </span><span class="s1">deltaTime</span><span class="s5">;</span>
+    <span class="s4">if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_W</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">)</span>
+        <span class="s1">cameraPos </span><span class="s5">-= </span><span class="s1">cameraSpeed </span><span class="s5">* </span><span class="s1">cameraDirection</span><span class="s5">;</span>
+    <span class="s4">if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_S</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">)</span>
+        <span class="s1">cameraPos </span><span class="s5">+= </span><span class="s1">cameraSpeed </span><span class="s5">* </span><span class="s1">cameraDirection</span><span class="s5">;</span>
+    <span class="s4">if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_A</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">)</span>
+        <span class="s1">cameraPos </span><span class="s5">-= </span><span class="s1">glm::normalize</span><span class="s5">(</span><span class="s1">glm::cross</span><span class="s5">(</span><span class="s1">cameraDirection</span><span class="s5">, </span><span class="s1">cameraUp</span><span class="s5">)) * </span><span class="s1">cameraSpeed</span><span class="s5">;</span>
+    <span class="s4">if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_D</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">)</span>
+        <span class="s1">cameraPos </span><span class="s5">+= </span><span class="s1">glm::normalize</span><span class="s5">(</span><span class="s1">glm::cross</span><span class="s5">(</span><span class="s1">cameraDirection</span><span class="s5">, </span><span class="s1">cameraUp</span><span class="s5">)) * </span><span class="s1">cameraSpeed</span><span class="s5">;</span>
+<span class="s5">}</span>
+<span class="s3">//the camera stuff is min</span>
+
+<span class="s4">void </span><span class="s1">framebufferSizeCallback</span><span class="s5">(</span><span class="s1">GLFWwindow </span><span class="s5">*</span><span class="s1">window</span><span class="s5">,</span>
+                             <span class="s4">int </span><span class="s1">width</span><span class="s5">, </span><span class="s4">int </span><span class="s1">height</span><span class="s5">) {</span>
+    <span class="s1">g_width </span><span class="s5">= </span><span class="s1">width</span><span class="s5">;</span>
+    <span class="s1">g_height </span><span class="s5">= </span><span class="s1">height</span><span class="s5">;</span>
+    <span class="s1">glViewport</span><span class="s5">(</span><span class="s6">0</span><span class="s5">, </span><span class="s6">0</span><span class="s5">, </span><span class="s1">width</span><span class="s5">, </span><span class="s1">height</span><span class="s5">);</span>
+<span class="s5">}</span>
+
+<span class="s1">std::string readFileToString</span><span class="s5">(</span><span class="s4">const </span><span class="s1">std::string </span><span class="s5">&amp;</span><span class="s1">filePath</span><span class="s5">) {</span>
+    <span class="s1">std::ifstream fileStream</span><span class="s5">(</span><span class="s1">filePath</span><span class="s5">, </span><span class="s1">std::ios::in</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">fileStream</span><span class="s5">.</span><span class="s1">is_open</span><span class="s5">()) {</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Could not open file: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">filePath</span><span class="s5">.</span><span class="s1">c_str</span><span class="s5">());</span>
+        <span class="s4">return </span><span class="s2">&quot;&quot;</span><span class="s5">;</span>
+    <span class="s5">}</span>
+    <span class="s1">std::stringstream buffer</span><span class="s5">;</span>
+    <span class="s1">buffer </span><span class="s5">&lt;&lt; </span><span class="s1">fileStream</span><span class="s5">.</span><span class="s1">rdbuf</span><span class="s5">();</span>
+    <span class="s4">return </span><span class="s1">buffer</span><span class="s5">.</span><span class="s1">str</span><span class="s5">();</span>
+<span class="s5">}</span>
+
+<span class="s1">GLuint generateShader</span><span class="s5">(</span><span class="s4">const </span><span class="s1">std::string </span><span class="s5">&amp;</span><span class="s1">shaderPath</span><span class="s5">, </span><span class="s1">GLuint shaderType</span><span class="s5">) {</span>
+    <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Loading shader: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">shaderPath</span><span class="s5">.</span><span class="s1">c_str</span><span class="s5">());</span>
+    <span class="s4">const </span><span class="s1">std::string shaderText </span><span class="s5">= </span><span class="s1">readFileToString</span><span class="s5">(</span><span class="s1">shaderPath</span><span class="s5">);</span>
+    <span class="s4">const </span><span class="s1">GLuint shader </span><span class="s5">= </span><span class="s1">glCreateShader</span><span class="s5">(</span><span class="s1">shaderType</span><span class="s5">);</span>
+    <span class="s4">const char </span><span class="s5">*</span><span class="s1">s_str </span><span class="s5">= </span><span class="s1">shaderText</span><span class="s5">.</span><span class="s1">c_str</span><span class="s5">();</span>
+    <span class="s1">glShaderSource</span><span class="s5">(</span><span class="s1">shader</span><span class="s5">, </span><span class="s6">1</span><span class="s5">, &amp;</span><span class="s1">s_str</span><span class="s5">, </span><span class="s4">nullptr</span><span class="s5">);</span>
+    <span class="s1">glCompileShader</span><span class="s5">(</span><span class="s1">shader</span><span class="s5">);</span>
+    <span class="s1">GLint success </span><span class="s5">= </span><span class="s6">0</span><span class="s5">;</span>
+    <span class="s1">glGetShaderiv</span><span class="s5">(</span><span class="s1">shader</span><span class="s5">, </span><span class="s1">GL_COMPILE_STATUS</span><span class="s5">, &amp;</span><span class="s1">success</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">success</span><span class="s5">) {</span>
+        <span class="s4">char </span><span class="s1">infoLog</span><span class="s5">[</span><span class="s6">512</span><span class="s5">];</span>
+        <span class="s1">glGetShaderInfoLog</span><span class="s5">(</span><span class="s1">shader</span><span class="s5">, </span><span class="s6">512</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Error! Shader issue [%s]: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">shaderPath</span><span class="s5">.</span><span class="s1">c_str</span><span class="s5">(), </span><span class="s1">infoLog</span><span class="s5">);</span>
+    <span class="s5">}</span>
+    <span class="s4">return </span><span class="s1">shader</span><span class="s5">;</span>
+<span class="s5">}</span>
+
+
+
+<span class="s4">int </span><span class="s1">main</span><span class="s5">() {</span>
+    <span class="s1">glfwInit</span><span class="s5">();</span>
+    <span class="s1">glfwWindowHint</span><span class="s5">(</span><span class="s1">GLFW_SAMPLES</span><span class="s5">, </span><span class="s6">4</span><span class="s5">);</span>
+    <span class="s1">glfwWindowHint</span><span class="s5">(</span><span class="s1">GLFW_CONTEXT_VERSION_MAJOR</span><span class="s5">, </span><span class="s6">3</span><span class="s5">);</span>
+    <span class="s1">glfwWindowHint</span><span class="s5">(</span><span class="s1">GLFW_CONTEXT_VERSION_MINOR</span><span class="s5">, </span><span class="s6">3</span><span class="s5">);</span>
+    <span class="s1">glfwWindowHint</span><span class="s5">(</span><span class="s1">GLFW_OPENGL_PROFILE</span><span class="s5">, </span><span class="s1">GLFW_OPENGL_CORE_PROFILE</span><span class="s5">);</span>
+<span class="s0">#ifdef </span><span class="s1">__APPLE__</span>
+    <span class="s1">glfwWindowHint</span><span class="s5">(</span><span class="s1">GLFW_OPENGL_FORWARD_COMPAT</span><span class="s5">, </span><span class="s1">GL_TRUE</span><span class="s5">);</span>
+<span class="s0">#endif</span>
+
+    <span class="s1">GLFWwindow </span><span class="s5">*</span><span class="s1">window </span><span class="s5">= </span><span class="s1">glfwCreateWindow</span><span class="s5">(</span><span class="s1">g_width</span><span class="s5">, </span><span class="s1">g_height</span><span class="s5">, </span><span class="s2">&quot;LearnOpenGL&quot;</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(</span><span class="s1">window </span><span class="s5">== </span><span class="s1">NULL</span><span class="s5">) {</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Failed to create GLFW window</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">);</span>
+        <span class="s1">glfwTerminate</span><span class="s5">();</span>
+        <span class="s4">return </span><span class="s5">-</span><span class="s6">1</span><span class="s5">;</span>
+    <span class="s5">}</span>
+    <span class="s1">glfwMakeContextCurrent</span><span class="s5">(</span><span class="s1">window</span><span class="s5">);</span>
+
+    <span class="s1">glfwSetFramebufferSizeCallback</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">framebufferSizeCallback</span><span class="s5">);</span>
+
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">gladLoadGLLoader</span><span class="s5">((</span><span class="s1">GLADloadproc</span><span class="s5">) </span><span class="s1">glfwGetProcAddress</span><span class="s5">)) {</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Failed to initialize GLAD</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">);</span>
+        <span class="s4">return </span><span class="s5">-</span><span class="s6">1</span><span class="s5">;</span>
+    <span class="s5">}</span>
+
+    <span class="s1">IMGUI_CHECKVERSION</span><span class="s5">();</span>
+    <span class="s1">ImGui::CreateContext</span><span class="s5">();</span>
+    <span class="s1">ImGuiIO </span><span class="s5">&amp;</span><span class="s1">io </span><span class="s5">= </span><span class="s1">ImGui::GetIO</span><span class="s5">();</span>
+    <span class="s1">io</span><span class="s5">.</span><span class="s1">ConfigFlags </span><span class="s5">|= </span><span class="s1">ImGuiConfigFlags_NavEnableKeyboard</span><span class="s5">;</span>
+
+    <span class="s3">//Setup platforms</span>
+    <span class="s1">ImGui_ImplGlfw_InitForOpenGL</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s4">true</span><span class="s5">);</span>
+    <span class="s1">ImGui_ImplOpenGL3_Init</span><span class="s5">(</span><span class="s2">&quot;#version 400&quot;</span><span class="s5">);</span>
+
+    <span class="s1">glEnable</span><span class="s5">(</span><span class="s1">GL_DEPTH_TEST</span><span class="s5">);</span>
+    <span class="s1">glFrontFace</span><span class="s5">(</span><span class="s1">GL_CCW</span><span class="s5">);</span>
+    <span class="s1">glEnable</span><span class="s5">(</span><span class="s1">GL_CULL_FACE</span><span class="s5">);</span>
+    <span class="s1">glCullFace</span><span class="s5">(</span><span class="s1">GL_BACK</span><span class="s5">);</span>
+    <span class="s1">glEnable</span><span class="s5">(</span><span class="s1">GL_BLEND</span><span class="s5">);</span>
+    <span class="s1">glBlendFunc</span><span class="s5">(</span><span class="s1">GL_SRC_ALPHA</span><span class="s5">, </span><span class="s1">GL_ONE_MINUS_SRC_ALPHA</span><span class="s5">);</span>
+
+    <span class="s3">// set up frame buffer</span>
+
+    <span class="s4">unsigned int </span><span class="s1">framebuffer</span><span class="s5">;    </span><span class="s3">// create buffer2</span>
+    <span class="s1">glGenFramebuffers</span><span class="s5">(</span><span class="s6">1</span><span class="s5">, &amp;</span><span class="s1">framebuffer</span><span class="s5">);</span>
+    <span class="s1">glBindFramebuffer</span><span class="s5">(</span><span class="s1">GL_FRAMEBUFFER</span><span class="s5">, </span><span class="s1">framebuffer</span><span class="s5">);</span>
+
+    <span class="s4">unsigned int </span><span class="s1">textureColorbuffer</span><span class="s5">;    </span><span class="s3">//create texture</span>
+    <span class="s1">glGenTextures</span><span class="s5">(</span><span class="s6">1</span><span class="s5">, &amp;</span><span class="s1">textureColorbuffer</span><span class="s5">);</span>
+    <span class="s1">glBindTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">, </span><span class="s1">textureColorbuffer</span><span class="s5">);</span>
+
+    <span class="s1">glTexImage2D</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">, </span><span class="s6">0</span><span class="s5">, </span><span class="s1">GL_RGB</span><span class="s5">, </span><span class="s1">g_width</span><span class="s5">,</span><span class="s1">g_height</span><span class="s5">, </span><span class="s6">0</span><span class="s5">, </span><span class="s1">GL_RGB</span><span class="s5">, </span><span class="s1">GL_UNSIGNED_BYTE</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">);</span>
+    <span class="s1">glTexParameteri</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">,</span><span class="s1">GL_TEXTURE_MIN_FILTER</span><span class="s5">, </span><span class="s1">GL_LINEAR</span><span class="s5">);</span>
+    <span class="s1">glTexParameteri</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">,</span><span class="s1">GL_TEXTURE_MAG_FILTER</span><span class="s5">, </span><span class="s1">GL_LINEAR</span><span class="s5">);  </span><span class="s3">//texture details</span>
+
+    <span class="s1">glFramebufferTexture2D</span><span class="s5">(</span><span class="s1">GL_FRAMEBUFFER</span><span class="s5">,</span><span class="s1">GL_COLOR_ATTACHMENT0</span><span class="s5">, </span><span class="s1">GL_TEXTURE_2D</span><span class="s5">,</span><span class="s1">textureColorbuffer</span><span class="s5">, </span><span class="s6">0</span><span class="s5">);</span>
+
+    <span class="s1">GLuint RBO</span><span class="s5">;</span>
+    <span class="s1">glGenRenderbuffers</span><span class="s5">(</span><span class="s6">1</span><span class="s5">, &amp;</span><span class="s1">RBO</span><span class="s5">);</span>
+    <span class="s1">glBindRenderbuffer</span><span class="s5">(</span><span class="s1">GL_RENDERBUFFER</span><span class="s5">, </span><span class="s1">RBO</span><span class="s5">);</span>
+
+    <span class="s1">glRenderbufferStorage</span><span class="s5">(</span><span class="s1">GL_RENDERBUFFER</span><span class="s5">, </span><span class="s1">GL_DEPTH_COMPONENT16</span><span class="s5">, </span><span class="s1">g_width</span><span class="s5">, </span><span class="s1">g_height</span><span class="s5">);</span>
+    <span class="s1">glFramebufferRenderbuffer</span><span class="s5">(</span><span class="s1">GL_FRAMEBUFFER</span><span class="s5">, </span><span class="s1">GL_DEPTH_ATTACHMENT</span><span class="s5">, </span><span class="s1">GL_RENDERBUFFER</span><span class="s5">, </span><span class="s1">RBO</span><span class="s5">);</span>
+
+    <span class="s1">glBindFramebuffer</span><span class="s5">(</span><span class="s1">GL_FRAMEBUFFER</span><span class="s5">, </span><span class="s6">0</span><span class="s5">);</span>
+
+
+    <span class="s3">//end frame buffer</span>
+
+    <span class="s3">//SET UP PLANE FOR THE FINAL RENDER</span>
+
+    <span class="s4">float </span><span class="s1">screenQuadVertices</span><span class="s5">[] = {</span>
+        <span class="s3">//positions     //uv</span>
+        <span class="s5">-</span><span class="s6">1.0f</span><span class="s5">,  </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">,  </span><span class="s6">0.0f</span><span class="s5">,</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s3">//tl</span>
+        <span class="s5">-</span><span class="s6">1.0f</span><span class="s5">, -</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">,  </span><span class="s6">0.0f</span><span class="s5">,</span><span class="s6">0.0f</span><span class="s5">, </span><span class="s3">//bl</span>
+        <span class="s6">1.0f</span><span class="s5">, -</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">,  </span><span class="s6">1.0f</span><span class="s5">,</span><span class="s6">0.0f</span><span class="s5">,   </span><span class="s3">//br</span>
+
+        <span class="s5">-</span><span class="s6">1.0f</span><span class="s5">,  </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">,  </span><span class="s6">0.0f</span><span class="s5">,</span><span class="s6">1.0f</span><span class="s5">,  </span><span class="s3">//tl</span>
+        <span class="s6">1.0f</span><span class="s5">,  -</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">,  </span><span class="s6">1.0f</span><span class="s5">,</span><span class="s6">0.0f</span><span class="s5">,   </span><span class="s3">//br</span>
+        <span class="s6">1.0f</span><span class="s5">,  </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">,  </span><span class="s6">1.0f</span><span class="s5">,</span><span class="s6">1.0f</span><span class="s5">,   </span><span class="s3">//tr</span>
+    <span class="s5">};</span>
+    <span class="s1">GLuint screenVAO </span><span class="s5">= </span><span class="s6">0</span><span class="s5">;</span>
+    <span class="s1">GLuint screenVBO</span><span class="s5">;</span>
+    <span class="s1">glGenVertexArrays</span><span class="s5">(</span><span class="s6">1</span><span class="s5">, &amp;</span><span class="s1">screenVAO</span><span class="s5">);</span>
+    <span class="s1">glGenBuffers</span><span class="s5">(</span><span class="s6">1</span><span class="s5">, &amp;</span><span class="s1">screenVBO</span><span class="s5">);</span>
+    <span class="s1">glBindVertexArray</span><span class="s5">(</span><span class="s1">screenVAO</span><span class="s5">);</span>
+    <span class="s1">glBindBuffer</span><span class="s5">(</span><span class="s1">GL_ARRAY_BUFFER</span><span class="s5">, </span><span class="s1">screenVBO</span><span class="s5">);</span>
+    <span class="s1">glBufferData</span><span class="s5">(</span><span class="s1">GL_ARRAY_BUFFER</span><span class="s5">, </span><span class="s4">sizeof</span><span class="s5">(</span><span class="s1">screenQuadVertices</span><span class="s5">), </span><span class="s1">screenQuadVertices</span><span class="s5">, </span><span class="s1">GL_STATIC_DRAW</span><span class="s5">);</span>
+    <span class="s1">glEnableVertexAttribArray</span><span class="s5">(</span><span class="s6">0</span><span class="s5">);</span>
+    <span class="s1">glVertexAttribPointer</span><span class="s5">(</span><span class="s6">0</span><span class="s5">, </span><span class="s6">3</span><span class="s5">, </span><span class="s1">GL_FLOAT</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s6">5 </span><span class="s5">* </span><span class="s4">sizeof</span><span class="s5">(</span><span class="s4">float</span><span class="s5">), (</span><span class="s4">void</span><span class="s5">*)</span><span class="s6">0</span><span class="s5">);</span>
+    <span class="s1">glEnableVertexAttribArray</span><span class="s5">(</span><span class="s6">1</span><span class="s5">);</span>
+    <span class="s1">glVertexAttribPointer</span><span class="s5">(</span><span class="s6">1</span><span class="s5">,</span><span class="s6">2</span><span class="s5">, </span><span class="s1">GL_FLOAT</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s6">5 </span><span class="s5">* </span><span class="s4">sizeof</span><span class="s5">(</span><span class="s4">float</span><span class="s5">), (</span><span class="s4">void</span><span class="s5">*)(</span><span class="s6">3 </span><span class="s5">* </span><span class="s4">sizeof</span><span class="s5">(</span><span class="s4">float</span><span class="s5">)));</span>
+    <span class="s1">glBindVertexArray</span><span class="s5">(</span><span class="s6">0</span><span class="s5">);</span>
+
+
+
+    <span class="s4">const </span><span class="s1">GLuint modelVertexShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/modelVertex.vs&quot;</span><span class="s5">, </span><span class="s1">GL_VERTEX_SHADER</span><span class="s5">);</span>
+    <span class="s4">const </span><span class="s1">GLuint fragmentShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/fragment.fs&quot;</span><span class="s5">, </span><span class="s1">GL_FRAGMENT_SHADER</span><span class="s5">);</span>
+    <span class="s4">const </span><span class="s1">GLuint textureShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/texture.fs&quot;</span><span class="s5">, </span><span class="s1">GL_FRAGMENT_SHADER</span><span class="s5">);</span>
+<span class="s3">///ADS model shaders generatiion</span>
+    <span class="s4">const </span><span class="s1">GLuint adsVertexShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/adsVertex.vs&quot;</span><span class="s5">, </span><span class="s1">GL_VERTEX_SHADER</span><span class="s5">);</span>
+    <span class="s4">const </span><span class="s1">GLuint adsFragmentShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/adsFragment.fs&quot;</span><span class="s5">, </span><span class="s1">GL_FRAGMENT_SHADER</span><span class="s5">);</span>
+
+    <span class="s4">const </span><span class="s1">GLuint planeVertexShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/screen.vs&quot;</span><span class="s5">, </span><span class="s1">GL_VERTEX_SHADER</span><span class="s5">);</span>
+    <span class="s4">const </span><span class="s1">GLuint planeFragmentShader </span><span class="s5">= </span><span class="s1">generateShader</span><span class="s5">(</span><span class="s2">&quot;shaders/screen.fs&quot;</span><span class="s5">, </span><span class="s1">GL_FRAGMENT_SHADER</span><span class="s5">);</span>
+
+    <span class="s4">int </span><span class="s1">success</span><span class="s5">;</span>
+    <span class="s4">char </span><span class="s1">infoLog</span><span class="s5">[</span><span class="s6">512</span><span class="s5">];</span>
+    <span class="s4">const unsigned int </span><span class="s1">modelShaderProgram </span><span class="s5">= </span><span class="s1">glCreateProgram</span><span class="s5">();</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">, </span><span class="s1">modelVertexShader</span><span class="s5">);</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">, </span><span class="s1">fragmentShader</span><span class="s5">);</span>
+    <span class="s1">glLinkProgram</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">);</span>
+    <span class="s1">glGetProgramiv</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">, </span><span class="s1">GL_LINK_STATUS</span><span class="s5">, &amp;</span><span class="s1">success</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">success</span><span class="s5">) {</span>
+        <span class="s1">glGetProgramInfoLog</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">, </span><span class="s6">512</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Error! Making Shader Program: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+    <span class="s5">}</span>
+
+
+    <span class="s3">/// Ads model program creation</span>
+    <span class="s4">const unsigned int </span><span class="s1">adsShaderProgram </span><span class="s5">= </span><span class="s1">glCreateProgram</span><span class="s5">();</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s1">adsVertexShader</span><span class="s5">);</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s1">adsFragmentShader</span><span class="s5">);</span>
+    <span class="s1">glLinkProgram</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">);</span>
+    <span class="s1">glGetProgramiv</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s1">GL_LINK_STATUS</span><span class="s5">, &amp;</span><span class="s1">success</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">success</span><span class="s5">) {</span>
+        <span class="s1">glGetProgramInfoLog</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s6">512</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Error! Making Shader Program: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+    <span class="s5">}</span>
+
+    <span class="s4">const unsigned int </span><span class="s1">textureShaderProgram </span><span class="s5">= </span><span class="s1">glCreateProgram</span><span class="s5">();</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s1">modelVertexShader</span><span class="s5">);</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s1">textureShader</span><span class="s5">);</span>
+    <span class="s1">glLinkProgram</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">);</span>
+    <span class="s1">glGetProgramiv</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s1">GL_LINK_STATUS</span><span class="s5">, &amp;</span><span class="s1">success</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">success</span><span class="s5">) {</span>
+        <span class="s1">glGetProgramInfoLog</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s6">512</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Error! Making Shader Program: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+    <span class="s5">}</span>
+
+    <span class="s4">const unsigned int </span><span class="s1">planeShaderProgram </span><span class="s5">= </span><span class="s1">glCreateProgram</span><span class="s5">();</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">, </span><span class="s1">planeVertexShader</span><span class="s5">);</span>
+    <span class="s1">glAttachShader</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">, </span><span class="s1">planeFragmentShader</span><span class="s5">);</span>
+    <span class="s1">glLinkProgram</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">);</span>
+    <span class="s1">glGetProgramiv</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">, </span><span class="s1">GL_LINK_STATUS</span><span class="s5">, &amp;</span><span class="s1">success</span><span class="s5">);</span>
+    <span class="s4">if </span><span class="s5">(!</span><span class="s1">success</span><span class="s5">) {</span>
+        <span class="s1">glGetProgramInfoLog</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">, </span><span class="s6">512</span><span class="s5">, </span><span class="s1">NULL</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+        <span class="s1">printf</span><span class="s5">(</span><span class="s2">&quot;Error! Making Shader Program: %s</span><span class="s4">\n</span><span class="s2">&quot;</span><span class="s5">, </span><span class="s1">infoLog</span><span class="s5">);</span>
+    <span class="s5">}</span>
+
+
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">modelVertexShader</span><span class="s5">);</span>
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">fragmentShader</span><span class="s5">);</span>
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">textureShader</span><span class="s5">);</span>
+    <span class="s3">///ads shader deletition</span>
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">adsVertexShader</span><span class="s5">);</span>
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">adsFragmentShader</span><span class="s5">);</span>
+
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">planeVertexShader</span><span class="s5">);</span>
+    <span class="s1">glDeleteShader</span><span class="s5">(</span><span class="s1">planeFragmentShader</span><span class="s5">);</span>
+
+    <span class="s1">core::Mesh quad </span><span class="s5">= </span><span class="s1">core::Mesh::generateQuad</span><span class="s5">();</span>
+    <span class="s1">core::Model quadModel</span><span class="s5">({</span><span class="s1">quad</span><span class="s5">});</span>
+    <span class="s1">quadModel</span><span class="s5">.</span><span class="s1">translate</span><span class="s5">(</span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">0</span><span class="s5">,</span><span class="s6">0</span><span class="s5">,-</span><span class="s6">2.5</span><span class="s5">));</span>
+    <span class="s1">quadModel</span><span class="s5">.</span><span class="s1">scale</span><span class="s5">(</span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">5</span><span class="s5">, </span><span class="s6">5</span><span class="s5">, </span><span class="s6">1</span><span class="s5">));</span>
+
+    <span class="s1">core::Model suzanne </span><span class="s5">= </span><span class="s1">core::AssimpLoader::loadModel</span><span class="s5">(</span><span class="s2">&quot;models/BdayKitty.fbx&quot;</span><span class="s5">);</span>
+    <span class="s1">core::Model sphere </span><span class="s5">= </span><span class="s1">core::AssimpLoader::loadModel</span><span class="s5">(</span><span class="s2">&quot;models/new_sphere.fbx&quot;</span><span class="s5">);</span>
+    <span class="s1">core::Texture cmgtGatoTexture</span><span class="s5">(</span><span class="s2">&quot;textures/CMGaTo_crop.png&quot;</span><span class="s5">); </span><span class="s3">//adding a texture like writing a variable</span>
+    <span class="s1">core::Texture cmgtGingerTexture</span><span class="s5">(</span><span class="s2">&quot;textures/GingerTexture.png&quot;</span><span class="s5">);</span>
+
+    <span class="s3">//scene switching</span>
+    <span class="s1">std::vector</span><span class="s5">&lt;</span><span class="s1">core::Model</span><span class="s5">*&gt; </span><span class="s1">models</span><span class="s5">; </span><span class="s3">//made pointer</span>
+    <span class="s1">models</span><span class="s5">.</span><span class="s1">push_back</span><span class="s5">(&amp;</span><span class="s1">suzanne</span><span class="s5">);   </span><span class="s3">//&amp;adress</span>
+    <span class="s1">std::vector</span><span class="s5">&lt;</span><span class="s1">core::Model</span><span class="s5">*&gt; </span><span class="s1">scene1</span><span class="s5">;</span>
+    <span class="s1">std::vector</span><span class="s5">&lt;</span><span class="s1">core::Model</span><span class="s5">*&gt; </span><span class="s1">scene2</span><span class="s5">;</span>
+    <span class="s1">scene1</span><span class="s5">.</span><span class="s1">push_back</span><span class="s5">(&amp;</span><span class="s1">sphere</span><span class="s5">);</span>
+    <span class="s1">scene2</span><span class="s5">.</span><span class="s1">push_back</span><span class="s5">(&amp;</span><span class="s1">suzanne</span><span class="s5">);</span>
+    <span class="s3">// scene1.push_back(&amp;suzanne);</span>
+
+    <span class="s3">//models.push_back(&amp;sphere);</span>
+
+
+
+    <span class="s1">glm::vec4 clearColor </span><span class="s5">= </span><span class="s1">glm::vec4</span><span class="s5">(</span><span class="s6">0.2f</span><span class="s5">, </span><span class="s6">0.2f</span><span class="s5">, </span><span class="s6">0.2f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">);</span>
+    <span class="s1">glClearColor</span><span class="s5">(</span><span class="s1">clearColor</span><span class="s5">.</span><span class="s1">r</span><span class="s5">,</span>
+                 <span class="s1">clearColor</span><span class="s5">.</span><span class="s1">g</span><span class="s5">, </span><span class="s1">clearColor</span><span class="s5">.</span><span class="s1">b</span><span class="s5">, </span><span class="s1">clearColor</span><span class="s5">.</span><span class="s1">a</span><span class="s5">);</span>
+
+
+
+
+
+    <span class="s1">GLint mvpMatrixUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">, </span><span class="s2">&quot;mvpMatrix&quot;</span><span class="s5">);</span>
+    <span class="s1">GLint textureModelUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s2">&quot;mvpMatrix&quot;</span><span class="s5">);</span>
+    <span class="s1">GLint textureUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s2">&quot;text&quot;</span><span class="s5">);</span>
+    <span class="s3">///ads model uniforms</span>
+    <span class="s1">GLint adsMvpMatrixUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;mvpMatrix&quot;</span><span class="s5">);</span>
+    <span class="s1">GLint adsMMatrixUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;mMatrix&quot;</span><span class="s5">);</span>
+
+    <span class="s1">GLint adsAmbientLightIntensityUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">, </span><span class="s2">&quot;ambientLightIntensity&quot;</span><span class="s5">);</span>
+    <span class="s1">GLint adsAmbientLightColorUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;ambientLightColor&quot;</span><span class="s5">);</span>
+
+    <span class="s1">GLint adsLightDirectionUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;lightDirection&quot;</span><span class="s5">);</span>
+    <span class="s1">GLint adsLightColorUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;lightColor&quot;</span><span class="s5">);</span>
+
+    <span class="s1">GLint lightPositionUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;lightPosition&quot;</span><span class="s5">);</span>
+    <span class="s1">GLint cameraPositionUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;cameraPosition&quot;</span><span class="s5">);</span>
+
+    <span class="s1">GLint adsUvGridTexUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">, </span><span class="s2">&quot;uvGridTexture&quot;</span><span class="s5">);</span>
+
+    <span class="s1">GLint screenTextureUniform </span><span class="s5">= </span><span class="s1">glGetUniformLocation</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">, </span><span class="s2">&quot;textureUniform&quot;</span><span class="s5">);</span>
+
+
+
+
+    <span class="s4">double </span><span class="s1">currentTime </span><span class="s5">= </span><span class="s1">glfwGetTime</span><span class="s5">();</span>
+    <span class="s4">double </span><span class="s1">finishFrameTime </span><span class="s5">= </span><span class="s6">0.0</span><span class="s5">;</span>
+
+    <span class="s4">float </span><span class="s1">rotationStrength </span><span class="s5">= </span><span class="s6">100.0f</span><span class="s5">;</span>
+    <span class="s4">float </span><span class="s1">x_distance </span><span class="s5">= </span><span class="s6">100.0f</span><span class="s5">;</span>
+
+    <span class="s4">bool </span><span class="s1">menu </span><span class="s5">= </span><span class="s4">true</span><span class="s5">;</span>
+
+    <span class="s4">while </span><span class="s5">(!</span><span class="s1">glfwWindowShouldClose</span><span class="s5">(</span><span class="s1">window</span><span class="s5">)) {</span>
+
+        <span class="s1">ImGui_ImplOpenGL3_NewFrame</span><span class="s5">();</span>
+        <span class="s1">ImGui_ImplGlfw_NewFrame</span><span class="s5">();</span>
+        <span class="s1">ImGui::NewFrame</span><span class="s5">();</span>
+        <span class="s1">ImGui::Begin</span><span class="s5">(</span><span class="s2">&quot;Raw Engine v2&quot;</span><span class="s5">);</span>
+        <span class="s1">ImGui::Text</span><span class="s5">(</span><span class="s2">&quot;Hello :)&quot;</span><span class="s5">);</span>
+        <span class="s1">ImGui::End</span><span class="s5">();</span>
+        <span class="s1">ImGui::SliderFloat</span><span class="s5">(</span><span class="s2">&quot;X LightPosition&quot;</span><span class="s5">, &amp;</span><span class="s1">x_distance</span><span class="s5">, -</span><span class="s6">5.0f</span><span class="s5">, </span><span class="s6">5.0f</span><span class="s5">);</span>
+
+        <span class="s1">processInput</span><span class="s5">(</span><span class="s1">window</span><span class="s5">);</span>
+        <span class="s1">suzanne</span><span class="s5">.</span><span class="s1">rotate</span><span class="s5">(</span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">0.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">0.0f</span><span class="s5">), </span><span class="s1">glm::radians</span><span class="s5">(</span><span class="s1">rotationStrength</span><span class="s5">) * </span><span class="s4">static_cast</span><span class="s5">&lt;</span><span class="s4">float</span><span class="s5">&gt;(</span><span class="s1">deltaTime</span><span class="s5">));</span>
+
+        <span class="s3">//VP</span>
+        <span class="s4">const float </span><span class="s1">radius </span><span class="s5">= </span><span class="s6">10.0f</span><span class="s5">;</span>
+        <span class="s4">float </span><span class="s1">camX </span><span class="s5">= </span><span class="s1">sin</span><span class="s5">(</span><span class="s1">glfwGetTime</span><span class="s5">()) * </span><span class="s1">radius</span><span class="s5">;</span>
+        <span class="s4">float </span><span class="s1">camZ </span><span class="s5">= </span><span class="s1">cos</span><span class="s5">(</span><span class="s1">glfwGetTime</span><span class="s5">()) * </span><span class="s1">radius</span><span class="s5">;</span>
+        <span class="s3">// glm::mat4 view;</span>
+        <span class="s3">// view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));</span>
+        <span class="s1">glm::mat4 view </span><span class="s5">= </span><span class="s1">glm::lookAt</span><span class="s5">(</span><span class="s1">cameraPos</span><span class="s5">,</span><span class="s1">cameraTarget</span><span class="s5">, </span><span class="s1">cameraUp</span><span class="s5">);</span>
+
+        <span class="s1">glm::mat4 projection </span><span class="s5">= </span><span class="s1">glm::perspective</span><span class="s5">(</span><span class="s1">glm::radians</span><span class="s5">(</span><span class="s6">45.0f</span><span class="s5">), </span><span class="s4">static_cast</span><span class="s5">&lt;</span><span class="s4">float</span><span class="s5">&gt;(</span><span class="s1">g_width</span><span class="s5">) / </span><span class="s4">static_cast</span><span class="s5">&lt;</span><span class="s4">float</span><span class="s5">&gt;(</span><span class="s1">g_height</span><span class="s5">), </span><span class="s6">0.1f</span><span class="s5">, </span><span class="s6">100.0f</span><span class="s5">);</span>
+
+        <span class="s1">glBindFramebuffer</span><span class="s5">(</span><span class="s1">GL_FRAMEBUFFER</span><span class="s5">, </span><span class="s1">framebuffer</span><span class="s5">);</span>
+        <span class="s1">glClear</span><span class="s5">(</span><span class="s1">GL_COLOR_BUFFER_BIT </span><span class="s5">| </span><span class="s1">GL_DEPTH_BUFFER_BIT</span><span class="s5">);</span>
+
+
+        <span class="s1">glUseProgram</span><span class="s5">(</span><span class="s1">textureShaderProgram</span><span class="s5">);</span>
+        <span class="s1">glUniformMatrix4fv</span><span class="s5">(</span><span class="s1">textureModelUniform</span><span class="s5">, </span><span class="s6">1</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s1">glm::value_ptr</span><span class="s5">(</span><span class="s1">projection </span><span class="s5">* </span><span class="s1">view </span><span class="s5">* </span><span class="s1">quadModel</span><span class="s5">.</span><span class="s1">getModelMatrix</span><span class="s5">()));</span>
+        <span class="s1">glActiveTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE0</span><span class="s5">);</span>
+        <span class="s1">glUniform1i</span><span class="s5">(</span><span class="s1">textureUniform</span><span class="s5">, </span><span class="s6">0</span><span class="s5">);</span>
+        <span class="s1">glBindTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">, </span><span class="s1">cmgtGatoTexture</span><span class="s5">.</span><span class="s1">getId</span><span class="s5">());</span>
+        <span class="s1">quadModel</span><span class="s5">.</span><span class="s1">render</span><span class="s5">();</span>
+        <span class="s1">glBindVertexArray</span><span class="s5">(</span><span class="s6">0</span><span class="s5">);</span>
+        <span class="s1">glActiveTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE0</span><span class="s5">);</span>
+
+
+
+        <span class="s4">if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_1</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">) {</span>
+            <span class="s1">menu </span><span class="s5">= </span><span class="s4">true</span><span class="s5">;</span>
+        <span class="s5">}</span>
+        <span class="s4">else if </span><span class="s5">(</span><span class="s1">glfwGetKey</span><span class="s5">(</span><span class="s1">window</span><span class="s5">, </span><span class="s1">GLFW_KEY_2</span><span class="s5">) == </span><span class="s1">GLFW_PRESS</span><span class="s5">) {</span>
+            <span class="s1">menu </span><span class="s5">= </span><span class="s4">false</span><span class="s5">;</span>
+
+        <span class="s5">}</span>
+
+        <span class="s4">if </span><span class="s5">(</span><span class="s1">menu </span><span class="s5">== </span><span class="s4">true</span><span class="s5">) {</span>
+            <span class="s4">for </span><span class="s5">(</span><span class="s4">int </span><span class="s1">i </span><span class="s5">= </span><span class="s6">0</span><span class="s5">; </span><span class="s1">i </span><span class="s5">&lt; </span><span class="s1">scene1</span><span class="s5">.</span><span class="s1">size</span><span class="s5">(); </span><span class="s1">i</span><span class="s5">++) {</span>
+
+                <span class="s1">core::Model </span><span class="s5">*</span><span class="s1">model </span><span class="s5">= </span><span class="s1">scene1</span><span class="s5">[</span><span class="s1">i</span><span class="s5">];</span>
+                <span class="s3">// ///ADS model light parameters</span>
+                <span class="s4">float </span><span class="s1">ambientLightIntensity </span><span class="s5">= </span><span class="s6">1.0f</span><span class="s5">;</span>
+                <span class="s1">glm::vec3 ambientLightColor </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">);</span>
+
+                <span class="s1">glm::vec3 LightDirection </span><span class="s5">= </span><span class="s1">glm::normalize</span><span class="s5">(</span><span class="s1">glm::vec3</span><span class="s5">(-</span><span class="s6">1.0f</span><span class="s5">, -</span><span class="s6">1.0f</span><span class="s5">, -</span><span class="s6">1.0f</span><span class="s5">));</span>
+                <span class="s1">glm::vec3 LightColor </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">);</span>
+                <span class="s1">glm::vec3 lightPosition </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">5.0f</span><span class="s5">, </span><span class="s6">5.0f</span><span class="s5">, </span><span class="s6">5.0f</span><span class="s5">);</span>
+                <span class="s3">// x.distance = 50.0f;</span>
+
+                <span class="s1">glUseProgram</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">);</span>
+                <span class="s1">glUniformMatrix4fv</span><span class="s5">(</span><span class="s1">adsMvpMatrixUniform</span><span class="s5">, </span><span class="s6">1</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s1">glm::value_ptr</span><span class="s5">(</span><span class="s1">projection </span><span class="s5">* </span><span class="s1">view </span><span class="s5">* </span><span class="s1">suzanne</span><span class="s5">.</span><span class="s1">getModelMatrix</span><span class="s5">()));</span>
+                <span class="s1">glUniformMatrix4fv</span><span class="s5">(</span><span class="s1">adsMMatrixUniform</span><span class="s5">, </span><span class="s6">1</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s1">glm::value_ptr</span><span class="s5">(</span><span class="s1">suzanne</span><span class="s5">.</span><span class="s1">getModelMatrix</span><span class="s5">()));</span>
+                <span class="s1">glActiveTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE1</span><span class="s5">);</span>
+                <span class="s1">glBindTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">, </span><span class="s1">cmgtGatoTexture</span><span class="s5">.</span><span class="s1">getId</span><span class="s5">());</span>
+                <span class="s1">glUniform1i</span><span class="s5">(</span><span class="s1">adsUvGridTexUniform</span><span class="s5">,</span><span class="s6">0</span><span class="s5">);</span>
+
+
+                <span class="s1">glUniform1f</span><span class="s5">(</span><span class="s1">adsAmbientLightIntensityUniform</span><span class="s5">, </span><span class="s1">ambientLightIntensity</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">adsAmbientLightColorUniform</span><span class="s5">, </span><span class="s1">ambientLightColor</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">ambientLightColor</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">ambientLightColor</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">adsLightDirectionUniform</span><span class="s5">, </span><span class="s1">LightDirection</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">LightDirection</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">LightDirection</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">adsLightColorUniform</span><span class="s5">, </span><span class="s1">LightColor</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">LightColor</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">LightColor</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">lightPositionUniform</span><span class="s5">, </span><span class="s1">lightPosition</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">lightPosition</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">lightPosition</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">cameraPositionUniform</span><span class="s5">, </span><span class="s1">cameraPos</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">cameraPos</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">cameraPos</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s3">//suzanne.render();</span>
+                <span class="s1">model</span><span class="s5">-&gt;</span><span class="s1">render</span><span class="s5">();</span>
+
+
+                <span class="s3">//render frame to show final image</span>
+
+
+            <span class="s5">}</span>
+        <span class="s5">}</span>
+
+        <span class="s4">else </span><span class="s5">{</span>
+            <span class="s4">for </span><span class="s5">(</span><span class="s4">int </span><span class="s1">i </span><span class="s5">= </span><span class="s6">0</span><span class="s5">; </span><span class="s1">i </span><span class="s5">&lt; </span><span class="s1">scene2</span><span class="s5">.</span><span class="s1">size</span><span class="s5">(); </span><span class="s1">i</span><span class="s5">++) {</span>
+
+                <span class="s1">core::Model </span><span class="s5">*</span><span class="s1">model </span><span class="s5">= </span><span class="s1">scene2</span><span class="s5">[</span><span class="s1">i</span><span class="s5">];</span>
+                <span class="s3">// ///ADS model light parameters</span>
+                <span class="s4">float </span><span class="s1">ambientLightIntensity </span><span class="s5">= </span><span class="s6">1.0f</span><span class="s5">;</span>
+                <span class="s1">glm::vec3 ambientLightColor </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">);</span>
+
+                <span class="s1">glm::vec3 LightDirection </span><span class="s5">= </span><span class="s1">glm::normalize</span><span class="s5">(</span><span class="s1">glm::vec3</span><span class="s5">(-</span><span class="s6">1.0f</span><span class="s5">, -</span><span class="s6">1.0f</span><span class="s5">, -</span><span class="s6">1.0f</span><span class="s5">));</span>
+                <span class="s1">glm::vec3 LightColor </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">, </span><span class="s6">1.0f</span><span class="s5">);</span>
+                <span class="s1">glm::vec3 lightPosition </span><span class="s5">= </span><span class="s1">glm::vec3</span><span class="s5">(</span><span class="s6">5.0f</span><span class="s5">, </span><span class="s6">5.0f</span><span class="s5">, </span><span class="s6">5.0f</span><span class="s5">);</span>
+                <span class="s3">// x.distance = 50.0f;</span>
+
+                <span class="s1">glUseProgram</span><span class="s5">(</span><span class="s1">adsShaderProgram</span><span class="s5">);</span>
+                <span class="s1">glUniformMatrix4fv</span><span class="s5">(</span><span class="s1">adsMvpMatrixUniform</span><span class="s5">, </span><span class="s6">1</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s1">glm::value_ptr</span><span class="s5">(</span><span class="s1">projection </span><span class="s5">* </span><span class="s1">view </span><span class="s5">* </span><span class="s1">suzanne</span><span class="s5">.</span><span class="s1">getModelMatrix</span><span class="s5">()));</span>
+                <span class="s1">glUniformMatrix4fv</span><span class="s5">(</span><span class="s1">adsMMatrixUniform</span><span class="s5">, </span><span class="s6">1</span><span class="s5">, </span><span class="s1">GL_FALSE</span><span class="s5">, </span><span class="s1">glm::value_ptr</span><span class="s5">(</span><span class="s1">suzanne</span><span class="s5">.</span><span class="s1">getModelMatrix</span><span class="s5">()));</span>
+                <span class="s1">glActiveTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE0</span><span class="s5">);</span>
+                <span class="s1">glBindTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">, </span><span class="s1">cmgtGingerTexture</span><span class="s5">.</span><span class="s1">getId</span><span class="s5">());</span>
+                <span class="s1">glUniform1i</span><span class="s5">(</span><span class="s1">adsUvGridTexUniform</span><span class="s5">,</span><span class="s6">0</span><span class="s5">);</span>
+
+
+                <span class="s1">glUniform1f</span><span class="s5">(</span><span class="s1">adsAmbientLightIntensityUniform</span><span class="s5">, </span><span class="s1">ambientLightIntensity</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">adsAmbientLightColorUniform</span><span class="s5">, </span><span class="s1">ambientLightColor</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">ambientLightColor</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">ambientLightColor</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">adsLightDirectionUniform</span><span class="s5">, </span><span class="s1">LightDirection</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">LightDirection</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">LightDirection</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">adsLightColorUniform</span><span class="s5">, </span><span class="s1">LightColor</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">LightColor</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">LightColor</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">lightPositionUniform</span><span class="s5">, </span><span class="s1">lightPosition</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">lightPosition</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">lightPosition</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s1">glUniform3f</span><span class="s5">(</span><span class="s1">cameraPositionUniform</span><span class="s5">, </span><span class="s1">cameraPos</span><span class="s5">.</span><span class="s1">x</span><span class="s5">, </span><span class="s1">cameraPos</span><span class="s5">.</span><span class="s1">y</span><span class="s5">, </span><span class="s1">cameraPos</span><span class="s5">.</span><span class="s1">z</span><span class="s5">);</span>
+                <span class="s3">//suzanne.render();</span>
+                <span class="s1">model</span><span class="s5">-&gt;</span><span class="s1">render</span><span class="s5">();</span>
+
+
+                <span class="s3">//render frame to show final image</span>
+
+
+            <span class="s5">}</span>
+        <span class="s5">}</span>
+
+
+            <span class="s3">//render frame to show final image</span>
+
+
+
+
+        <span class="s1">glBindVertexArray</span><span class="s5">(</span><span class="s6">0</span><span class="s5">);</span>
+
+        <span class="s1">glBindFramebuffer</span><span class="s5">(</span><span class="s1">GL_FRAMEBUFFER</span><span class="s5">, </span><span class="s6">0</span><span class="s5">);</span>
+
+        <span class="s1">glClear</span><span class="s5">( </span><span class="s1">GL_COLOR_BUFFER_BIT </span><span class="s5">| </span><span class="s1">GL_DEPTH_BUFFER_BIT</span><span class="s5">);</span>
+
+        <span class="s1">glUseProgram</span><span class="s5">(</span><span class="s1">planeShaderProgram</span><span class="s5">);</span>
+        <span class="s1">glBindVertexArray</span><span class="s5">(</span><span class="s1">screenVAO</span><span class="s5">);</span>
+        <span class="s1">glActiveTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE0</span><span class="s5">);</span>
+        <span class="s1">glUniform1i</span><span class="s5">(</span><span class="s1">textureUniform</span><span class="s5">, </span><span class="s6">0</span><span class="s5">);</span>
+        <span class="s3">///to load the gato</span>
+        <span class="s1">glBindTexture</span><span class="s5">(</span><span class="s1">GL_TEXTURE_2D</span><span class="s5">, </span><span class="s1">textureColorbuffer</span><span class="s5">);</span>
+        <span class="s1">glDrawArrays</span><span class="s5">(</span><span class="s1">GL_TRIANGLES</span><span class="s5">,</span><span class="s6">0 </span><span class="s5">,</span><span class="s6">6</span><span class="s5">);</span>
+        <span class="s1">glBindVertexArray</span><span class="s5">(</span><span class="s6">0</span><span class="s5">);</span>
+
+        <span class="s3">// ///ADS model light parameters</span>
+        <span class="s3">// float ambientLightIntensity = 1.0f;</span>
+        <span class="s3">// glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);</span>
+        <span class="s3">//</span>
+        <span class="s3">// glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));</span>
+        <span class="s3">// glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);</span>
+        <span class="s3">// glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);</span>
+        <span class="s3">// // x.distance = 50.0f;</span>
+        <span class="s3">//</span>
+        <span class="s3">// glUseProgram(adsShaderProgram);</span>
+        <span class="s3">// glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));</span>
+        <span class="s3">// glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));</span>
+        <span class="s3">// glActiveTexture(GL_TEXTURE0);</span>
+        <span class="s3">// glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());</span>
+        <span class="s3">// glUniform1i(adsUvGridTexUniform,0);</span>
+        <span class="s3">//</span>
+        <span class="s3">//</span>
+        <span class="s3">// glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);</span>
+        <span class="s3">// glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);</span>
+        <span class="s3">// glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);</span>
+        <span class="s3">// glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);</span>
+        <span class="s3">// glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);</span>
+        <span class="s3">// glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);</span>
+        <span class="s3">// suzanne.render();</span>
+
+
+
+        <span class="s3">//Sussane rendering</span>
+
+        <span class="s3">//ADS model light</span>
+
+
+        <span class="s1">ImGui::Render</span><span class="s5">();</span>
+        <span class="s1">ImGui_ImplOpenGL3_RenderDrawData</span><span class="s5">(</span><span class="s1">ImGui::GetDrawData</span><span class="s5">());</span>
+
+        <span class="s1">glfwSwapBuffers</span><span class="s5">(</span><span class="s1">window</span><span class="s5">);</span>
+        <span class="s1">glfwPollEvents</span><span class="s5">();</span>
+        <span class="s1">finishFrameTime </span><span class="s5">= </span><span class="s1">glfwGetTime</span><span class="s5">();</span>
+        <span class="s1">deltaTime </span><span class="s5">= </span><span class="s4">static_cast</span><span class="s5">&lt;</span><span class="s4">float</span><span class="s5">&gt;(</span><span class="s1">finishFrameTime </span><span class="s5">- </span><span class="s1">currentTime</span><span class="s5">);</span>
+        <span class="s1">currentTime </span><span class="s5">= </span><span class="s1">finishFrameTime</span><span class="s5">;</span>
+    <span class="s5">}</span>
+
+    <span class="s1">glDeleteProgram</span><span class="s5">(</span><span class="s1">modelShaderProgram</span><span class="s5">);</span>
+    <span class="s1">ImGui_ImplOpenGL3_Shutdown</span><span class="s5">();</span>
+    <span class="s1">ImGui_ImplGlfw_Shutdown</span><span class="s5">();</span>
+    <span class="s1">ImGui::DestroyContext</span><span class="s5">();</span>
+
+    <span class="s1">glfwTerminate</span><span class="s5">();</span>
+    <span class="s4">return </span><span class="s6">0</span><span class="s5">;</span>
+<span class="s5">}</span></pre>
+</body>
+</html>

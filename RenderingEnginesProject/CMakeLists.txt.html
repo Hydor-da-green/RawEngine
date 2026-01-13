@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>CMakeLists.txt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #ffc66d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #cf8e6d;}
+.s5 { color: #6aab73;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+CMakeLists.txt</font>
+</center></td></tr></table>
+<pre><span class="s0">cmake_minimum_required</span><span class="s1">(VERSION 3.29)</span>
+<span class="s0">project</span><span class="s1">(RawEngine)</span>
+
+<span class="s0">set</span><span class="s1">(CMAKE_CXX_STANDARD 20)</span>
+<span class="s0">set</span><span class="s1">(CMAKE_CXX_STANDARD_REQUIRED ON)</span>
+
+<span class="s0">include_directories</span><span class="s1">(imgui imgui/backends)</span>
+
+<span class="s3"># Add source files for ImGui</span>
+<span class="s0">set</span><span class="s1">(IMGUI_SOURCES</span>
+        <span class="s1">imgui/imgui.cpp</span>
+        <span class="s1">imgui/imgui_draw.cpp</span>
+        <span class="s1">imgui/imgui_demo.cpp</span>
+        <span class="s1">imgui/imgui_tables.cpp</span>
+        <span class="s1">imgui/imgui_widgets.cpp</span>
+        <span class="s1">imgui/backends/imgui_impl_glfw.cpp</span>
+        <span class="s1">imgui/backends/imgui_impl_opengl3.cpp</span>
+        <span class="s1">core/texture.cpp</span>
+        <span class="s1">core/texture.h</span>
+<span class="s1">)</span>
+
+<span class="s0">add_executable</span><span class="s1">(RawEngine main.cpp</span>
+        <span class="s4">${</span><span class="s1">IMGUI_SOURCES</span><span class="s4">}</span>
+        <span class="s1">core/assimpLoader.cpp</span>
+        <span class="s1">core/assimpLoader.h</span>
+        <span class="s1">core/mesh.cpp</span>
+        <span class="s1">core/mesh.h</span>
+        <span class="s1">core/vertex.h</span>
+        <span class="s1">core/model.cpp</span>
+        <span class="s1">core/model.h</span>
+<span class="s1">)</span>
+
+<span class="s0">add_custom_command</span><span class="s1">(</span>
+        <span class="s1">TARGET RawEngine PRE_BUILD</span>
+        <span class="s1">COMMAND </span><span class="s4">${</span><span class="s1">CMAKE_COMMAND</span><span class="s4">} </span><span class="s1">-E copy_directory</span>
+        <span class="s4">${</span><span class="s1">CMAKE_SOURCE_DIR</span><span class="s4">}</span><span class="s1">/shaders/</span>
+        <span class="s4">${</span><span class="s1">CMAKE_CURRENT_BINARY_DIR</span><span class="s4">}</span><span class="s1">/shaders/)</span>
+
+<span class="s0">add_custom_command</span><span class="s1">(</span>
+        <span class="s1">TARGET RawEngine PRE_BUILD</span>
+        <span class="s1">COMMAND </span><span class="s4">${</span><span class="s1">CMAKE_COMMAND</span><span class="s4">} </span><span class="s1">-E copy_directory</span>
+        <span class="s4">${</span><span class="s1">CMAKE_SOURCE_DIR</span><span class="s4">}</span><span class="s1">/models/</span>
+        <span class="s4">${</span><span class="s1">CMAKE_CURRENT_BINARY_DIR</span><span class="s4">}</span><span class="s1">/models/)</span>
+
+<span class="s0">add_custom_command</span><span class="s1">(</span>
+        <span class="s1">TARGET RawEngine PRE_BUILD</span>
+        <span class="s1">COMMAND </span><span class="s4">${</span><span class="s1">CMAKE_COMMAND</span><span class="s4">} </span><span class="s1">-E copy_directory</span>
+        <span class="s4">${</span><span class="s1">CMAKE_SOURCE_DIR</span><span class="s4">}</span><span class="s1">/textures/</span>
+        <span class="s4">${</span><span class="s1">CMAKE_CURRENT_BINARY_DIR</span><span class="s4">}</span><span class="s1">/textures/)</span>
+
+<span class="s0">add_custom_target</span><span class="s1">(copy_shaders ALL</span>
+        <span class="s1">COMMAND </span><span class="s4">${</span><span class="s1">CMAKE_COMMAND</span><span class="s4">} </span><span class="s1">-E copy_directory</span>
+        <span class="s4">${</span><span class="s1">CMAKE_SOURCE_DIR</span><span class="s4">}</span><span class="s1">/shaders</span>
+        <span class="s4">${</span><span class="s1">CMAKE_CURRENT_BINARY_DIR</span><span class="s4">}</span><span class="s1">/shaders</span>
+        <span class="s1">DEPENDS </span><span class="s4">${</span><span class="s1">SHADER_FILES</span><span class="s4">}</span>
+        <span class="s1">COMMENT </span><span class="s5">&quot;</span><span class="s1">Copying shaders...</span><span class="s5">&quot;</span>
+<span class="s1">)</span>
+
+<span class="s0">add_dependencies</span><span class="s1">(RawEngine copy_shaders)</span>
+
+<span class="s0">find_package</span><span class="s1">(glad CONFIG REQUIRED)</span>
+<span class="s0">target_link_libraries</span><span class="s1">(RawEngine PRIVATE glad::glad)</span>
+<span class="s0">find_package</span><span class="s1">(glfw3 CONFIG REQUIRED)</span>
+<span class="s0">target_link_libraries</span><span class="s1">(RawEngine PRIVATE glfw)</span>
+<span class="s0">find_package</span><span class="s1">(glm CONFIG REQUIRED)</span>
+<span class="s0">target_link_libraries</span><span class="s1">(RawEngine PRIVATE glm::glm)</span>
+<span class="s0">find_package</span><span class="s1">(assimp CONFIG REQUIRED)</span>
+<span class="s0">target_link_libraries</span><span class="s1">(RawEngine PRIVATE assimp::assimp)</span>
+<span class="s0">find_package</span><span class="s1">(Stb REQUIRED)</span>
+<span class="s0">target_include_directories</span><span class="s1">(RawEngine PRIVATE </span><span class="s4">${</span><span class="s1">Stb_INCLUDE_DIR</span><span class="s4">}</span><span class="s1">)</span></pre>
+</body>
+</html>
