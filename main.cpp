@@ -262,9 +262,12 @@ int main() {
     core::Model sphere = core::AssimpLoader::loadModel("models/new_sphere.fbx");
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png"); //adding a texture like writing a variable
     core::Texture cmgtGingerTexture("textures/GingerTexture.png");
-    core::Texture CoubleFoundationTexture("textures/CoubleFoundation.png");
-    BdayKitty.id = cmgtGatoTexture.getId();
+    core::Texture CoubleFoundationTexture("textures/CoubleFoundation_1024x1024.png");
+    BdayKitty.id = cmgtGingerTexture.getId();
     sphere.id = CoubleFoundationTexture.getId();
+    BdayKitty.is_in_scene1 = true;
+
+    sphere.is_in_scene1 = false;
 
 
     //scene switching
@@ -274,8 +277,7 @@ int main() {
     std::vector<core::Model*> scene2;
     scene1.push_back(&sphere);
     scene1.push_back(&BdayKitty);
-    scene2.push_back(&sphere);
-    scene2.push_back(&BdayKitty);
+
     // scene1.push_back(&suzanne);
 
     //models.push_back(&sphere);
@@ -309,6 +311,8 @@ int main() {
     GLint adsUvGridTexUniform = glGetUniformLocation(adsShaderProgram, "uvGridTexture");
 
     GLint screenTextureUniform = glGetUniformLocation(planeShaderProgram, "textureUniform");
+    // GLint framebuffer_is_active = glGetUniformLocation(planeShaderProgram, "textureUniform");
+
 
 
 
@@ -318,11 +322,11 @@ int main() {
 
     float rotationStrength = 100.0f;
     float x_distance = 100.0f;
+    bool framebuffer_is_active = true;
 
     bool menu = true;
 
     while (!glfwWindowShouldClose(window)) {
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -331,8 +335,15 @@ int main() {
         ImGui::End();
         ImGui::SliderFloat("X LightPosition", &x_distance, -5.0f, 5.0f);
 
+        if (ImGui::Button("Change Framebuffer")) {
+            framebuffer_is_active = !framebuffer_is_active;
+        }
+
         processInput(window);
         BdayKitty.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+        sphere.translate(glm::vec3(0.0f,(sin(glfwGetTime()) * 0.03f), 0.0f));
+
+
 
         //VP
         const float radius = 10.0f;
@@ -359,18 +370,18 @@ int main() {
 
 
 
-        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
             menu = true;
         }
-        else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        else if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
             menu = false;
 
         }
 
-        if (menu == true) {
-            for (int i = 0; i < scene1.size(); i++) {
-
-                core::Model *model = scene1[i];
+        // if (menu == true) {
+        for (int i = 0; i < scene1.size(); i++) {
+            core::Model *model = scene1[i];
+            if (model->is_in_scene1 == menu) {
                 // ///ADS model light parameters
                 float ambientLightIntensity = 1.0f;
                 glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -381,47 +392,11 @@ int main() {
                 // x.distance = 50.0f;
 
                 glUseProgram(adsShaderProgram);
-                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * BdayKitty.getModelMatrix()));
-                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(BdayKitty.getModelMatrix()));
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, cmgtGatoTexture.getId());
-                glUniform1i(adsUvGridTexUniform,0);
-
-
-                glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);
-                glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
-                glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
-                glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
-                glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
-                glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
-                //suzanne.render();
-                model->render();
-
-
-                //render frame to show final image
-
-
-            }
-        }
-
-        else {
-            for (int i = 0; i < scene2.size(); i++) {
-
-                core::Model *model = scene2[i];
-                // ///ADS model light parameters
-                float ambientLightIntensity = 1.0f;
-                glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-
-                glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
-                glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-                glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
-                // x.distance = 50.0f;
-
-                glUseProgram(adsShaderProgram);
-                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * BdayKitty.getModelMatrix()));
-                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(BdayKitty.getModelMatrix()));
+                glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * model->getModelMatrix()));
+                glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(model->getModelMatrix()));
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());
+                glBindTexture(GL_TEXTURE_2D, model->id);
+
                 glUniform1i(adsUvGridTexUniform,0);
 
 
@@ -433,14 +408,13 @@ int main() {
                 glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
                 //suzanne.render();
                 model->render();
-
-
-                //render frame to show final image
-
-
             }
-        }
 
+            //render frame to show final image
+
+
+
+        }
 
             //render frame to show final image
 

@@ -4,6 +4,7 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include "mesh.h"
 
+
 namespace core {
     class Model {
     private:
@@ -15,6 +16,7 @@ namespace core {
     public:
         Model(std::vector<core::Mesh> meshes) : meshes(meshes), modelMatrix(1) {}
     int id;
+        bool is_in_scene1;
 
 
         void render();
