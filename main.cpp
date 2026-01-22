@@ -276,7 +276,9 @@ int main() {
     std::vector<core::Model*> scene1;
     std::vector<core::Model*> scene2;
     scene1.push_back(&sphere);
-    scene1.push_back(&BdayKitty);
+    scene2.push_back(&BdayKitty);
+    scene2.push_back(&sphere);
+
 
     // scene1.push_back(&suzanne);
 
@@ -311,6 +313,8 @@ int main() {
     GLint adsUvGridTexUniform = glGetUniformLocation(adsShaderProgram, "uvGridTexture");
 
     GLint screenTextureUniform = glGetUniformLocation(planeShaderProgram, "textureUniform");
+
+    GLint frameBufferEffects = glGetUniformLocation(planeShaderProgram,"frameBufferEffect");
     // GLint framebuffer_is_active = glGetUniformLocation(planeShaderProgram, "textureUniform");
 
 
@@ -323,9 +327,11 @@ int main() {
     float rotationStrength = 100.0f;
     float x_distance = 100.0f;
     bool framebuffer_is_active = true;
+    float frameBufferEffect = 0;
 
     bool menu = true;
-
+    std::vector<core::Model*> currentScene;
+    currentScene = scene1;
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -337,6 +343,11 @@ int main() {
 
         if (ImGui::Button("Change Framebuffer")) {
             framebuffer_is_active = !framebuffer_is_active;
+            if (framebuffer_is_active) {
+                frameBufferEffect = 0;
+
+            }
+            else { frameBufferEffect = 1; }
         }
 
         processInput(window);
@@ -368,20 +379,22 @@ int main() {
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
+        menu = true;
 
-
-        if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
-            menu = true;
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+            //menu = true;
+            currentScene=scene1;
         }
-        else if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-            menu = false;
-
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+            //menu = false;
+            currentScene=scene2;
         }
+
 
         // if (menu == true) {
-        for (int i = 0; i < scene1.size(); i++) {
-            core::Model *model = scene1[i];
-            if (model->is_in_scene1 == menu) {
+        for (int i = 0; i < currentScene.size(); i++) {
+            core::Model *model = currentScene[i];
+            // if (model->is_in_scene1 == menu) {
                 // ///ADS model light parameters
                 float ambientLightIntensity = 1.0f;
                 glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -406,9 +419,10 @@ int main() {
                 glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
                 glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
                 glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
+
                 //suzanne.render();
                 model->render();
-            }
+            //}
 
             //render frame to show final image
 
@@ -431,6 +445,7 @@ int main() {
         glBindVertexArray(screenVAO);
         glActiveTexture(GL_TEXTURE0);
         glUniform1i(textureUniform, 0);
+        glUniform1f(frameBufferEffects, frameBufferEffect);
         ///to load the gato
         glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
         glDrawArrays(GL_TRIANGLES,0 ,6);
