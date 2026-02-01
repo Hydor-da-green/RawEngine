@@ -270,6 +270,7 @@ int main() {
     sphere.is_in_scene1 = false;
 
 
+
     //scene switching
     std::vector<core::Model*> models; //made pointer
     models.push_back(&BdayKitty);   //&adress
@@ -278,19 +279,14 @@ int main() {
     scene1.push_back(&sphere);
     scene2.push_back(&BdayKitty);
     scene2.push_back(&sphere);
-
-
-    // scene1.push_back(&suzanne);
-
-    //models.push_back(&sphere);
+    std::vector<core::Model*> currentScene;
+    currentScene = scene1;
 
 
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
     glClearColor(clearColor.r,
                  clearColor.g, clearColor.b, clearColor.a);
-
-
 
 
 
@@ -315,11 +311,6 @@ int main() {
     GLint screenTextureUniform = glGetUniformLocation(planeShaderProgram, "textureUniform");
 
     GLint frameBufferEffects = glGetUniformLocation(planeShaderProgram,"frameBufferEffect");
-    // GLint framebuffer_is_active = glGetUniformLocation(planeShaderProgram, "textureUniform");
-
-
-
-
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -330,8 +321,7 @@ int main() {
     float frameBufferEffect = 0;
 
     bool menu = true;
-    std::vector<core::Model*> currentScene;
-    currentScene = scene1;
+
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -347,7 +337,8 @@ int main() {
                 frameBufferEffect = 0;
 
             }
-            else { frameBufferEffect = 1; }
+            else if (!framebuffer_is_active){ frameBufferEffect = 1; }
+            // else  (!!framebuffer_is_active) { frameBufferEffect = 2; }
         }
 
         processInput(window);
@@ -420,7 +411,7 @@ int main() {
                 glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
                 glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
 
-                //suzanne.render();
+
                 model->render();
             //}
 
@@ -429,10 +420,6 @@ int main() {
 
 
         }
-
-            //render frame to show final image
-
-
 
 
         glBindVertexArray(0);
@@ -451,34 +438,6 @@ int main() {
         glDrawArrays(GL_TRIANGLES,0 ,6);
         glBindVertexArray(0);
 
-        // ///ADS model light parameters
-        // float ambientLightIntensity = 1.0f;
-        // glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        //
-        // glm::vec3 LightDirection = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
-        // glm::vec3 LightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        // glm::vec3 lightPosition = glm::vec3(5.0f, 5.0f, 5.0f);
-        // // x.distance = 50.0f;
-        //
-        // glUseProgram(adsShaderProgram);
-        // glUniformMatrix4fv(adsMvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
-        // glUniformMatrix4fv(adsMMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_2D, cmgtGingerTexture.getId());
-        // glUniform1i(adsUvGridTexUniform,0);
-        //
-        //
-        // glUniform1f(adsAmbientLightIntensityUniform, ambientLightIntensity);
-        // glUniform3f(adsAmbientLightColorUniform, ambientLightColor.x, ambientLightColor.y, ambientLightColor.z);
-        // glUniform3f(adsLightDirectionUniform, LightDirection.x, LightDirection.y, LightDirection.z);
-        // glUniform3f(adsLightColorUniform, LightColor.x, LightColor.y, LightColor.z);
-        // glUniform3f(lightPositionUniform, lightPosition.x, lightPosition.y, lightPosition.z);
-        // glUniform3f(cameraPositionUniform, cameraPos.x, cameraPos.y, cameraPos.z);
-        // suzanne.render();
-
-
-
-        //Sussane rendering
 
         //ADS model light
 
